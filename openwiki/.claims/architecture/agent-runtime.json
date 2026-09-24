@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:61fe079e51263dd66a5df4cb9016c6f936ef68a8accf413ca3547feb5f35fc12",
+  "pageVersion": "sha256:bf46ae4ddcf11c0441e23f6bea447513432f247023e602e6abe5fb1c2a3e334c",
   "claims": [
     {
       "id": "claim_b135795717474452be15e901f67a507f",
@@ -126,19 +126,19 @@
     },
     {
       "id": "claim_0b035ec9c1ea46a180ea4b593920931c",
-      "statement": "createModel maps the resolved provider onto a purpose-built LangChain chat model per branch: ChatAnthropic for anthropic, ChatGoogle for gemini, the Vertex model factory for gemini-enterprise, ChatOpenAI against the Codex Responses backend for openai-chatgpt, ChatOpenRouter for openrouter, ChatBedrockConverse for bedrock, a ChatOpenAI branch for the IBM bob provider that injects the real Apikey key and required User-Agent via a createBobFetch fetch adapter (with a placeholder to satisfy the constructor), and a shared ChatOpenAI for openai and all OpenAI-compatible gateways.",
+      "statement": "createModel maps the resolved provider onto a purpose-built LangChain chat model per branch: ChatAnthropic for anthropic, ChatGoogle for gemini, the Vertex model factory for gemini-enterprise, ChatOpenAI against the Codex Responses backend for openai-chatgpt, ChatOpenRouter for openrouter, ChatBedrockConverse for bedrock, a dedicated ChatOpenAI branch for the IBM bob provider that injects the real Apikey key and required User-Agent via a createBobFetch fetch adapter (with a placeholder to satisfy the constructor) and forces streaming:true via providerUsesStreaming so long generations do not outlast the endpoint timeout, and a shared ChatOpenAI fallthrough for openai and all OpenAI-compatible gateways that spreads streaming:true when providerUsesStreaming returns true.",
       "evidence": [
         {
           "resource": "repo://src/agent/bob.ts#L1-L28",
           "version": "repo-lines-v1:sha256:3fcaa881cc6f01cbed50678578b50cd9cad048c24ebd2402add1ccea4c05b2eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWQ0YjhkZWQ1NzU1ZmE1NmIyZTQ0ZThjN2QxZTY3MWVlZDA3NzlkZWJmNTY4MWVlMjdlOGQ5NjQzN2U4ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1086-L1295",
-          "version": "repo-lines-v1:sha256:279060cb561442977bfe0818a313f1fb706c6943edd23c44f4024f782f87e04b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMDRkMmYzNmMyZDVmODJiMDdhZTIzMDU5MmYyYzcyZjJjMTQyMTYzZjMyMTkxM2I4YTk0OTcxNTE5OTY2YjljIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiYWNiNmRhZjcwYjNhYmUwNzQyNDhlMzliNjAzMjIwNTRkODY5NTA3MmMzMzZhNGIzMmY0NDZhNDcwNjlhMDJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ZGY5MDVmMDNkMTc0YWFlNjAwNzcwODcwMWNmMGY4OGQ0MGJhOTg4Zjg1NjhhM2E3ODQ0MTZjNWY0N2M3ZTNjIn0"
+          "resource": "repo://src/agent/index.ts#L1113-L1323",
+          "version": "repo-lines-v1:sha256:f721499e19b71f279d966a8ed3e31d79f09a3ca569c5010acc96c1ca37de58bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMDRkMmYzNmMyZDVmODJiMDdhZTIzMDU5MmYyYzcyZjJjMTQyMTYzZjMyMTkxM2I4YTk0OTcxNTE5OTY2YjljIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiYWNiNmRhZjcwYjNhYmUwNzQyNDhlMzliNjAzMjIwNTRkODY5NTA3MmMzMzZhNGIzMmY0NDZhNDcwNjlhMDJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ZGY5MDVmMDNkMTc0YWFlNjAwNzcwODcwMWNmMGY4OGQ0MGJhOTg4Zjg1NjhhM2E3ODQ0MTZjNWY0N2M3ZTNjIn0"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1265-L1278",
-          "version": "repo-lines-v1:sha256:b772a0c3e2a157ef66e7a01b297ac73cc7df5433524b794b0bf50ff18684b5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGJjYWYwN2I2MzgyZTFjYWM0ZjY3M2RjMmZjYTFmOWEyNGNmNDNjNzk2M2JlMGFmNTQ0NjA1YTAwYjVhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2E0NDY3ZmE2ZGJjNzRiODVmYTIxYWE2YWFkZjFlNTBiMWRhOGQ3MDg0ZTYwMmQxYTY4NWIxZWJjM2JmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDgyNDZhMWRhODZlZWIyYWVkZTdhM2NiMTdiODUxYWEzOGZlMzQyODdmNWQ4M2MyYzdjZmMxMTRiZTM5ZDUifQ"
+          "resource": "repo://src/agent/index.ts#L1269-L1306",
+          "version": "repo-lines-v1:sha256:43cb3d067782c013618d82f8cca7f737710c998e864910eeccd212c80dffd813:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDg4OTYxNDEyNGZmMGJhZDNjMWUzYTMwMmM0ZWYwMDg1YTBkMzFhZDRiYmRhNzhlMDQwZTRmNDlhOGM5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDgyNDZhMWRhODZlZWIyYWVkZTdhM2NiMTdiODUxYWEzOGZlMzQyODdmNWQ4M2MyYzdjZmMxMTRiZTM5ZDUifQ"
         }
       ]
     },
@@ -186,15 +186,19 @@
     },
     {
       "id": "claim_78a93b97c46341cf8a67cc22e4a85755",
-      "statement": "The shared ChatOpenAI fallthrough (openai, OpenAI-compatible gateways, and copilot) honors a per-provider base URL, selects the Responses API only when the provider config declares it via providerUsesResponsesApi, and forces the streaming HTTP transport (streaming:true) for providers whose providerUsesStreaming returns true — copilot is unconditionally forced (all Copilot models stream, because non-GPT-5 chat-completions models reject or return empty responses without streaming) and openai-compatible gateways opt in via OPENWIKI_OPENAI_COMPATIBLE_STREAMING — without disabling streaming when the flag is absent.",
+      "statement": "providerUsesResponsesApi and providerUsesStreaming are two shared helpers in the constants module that govern which ChatOpenAI options each branch applies. providerUsesResponsesApi(provider, modelId) returns true for the openai-compatible provider only via the explicit OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API opt-in (resolveOpenAiCompatibleUseResponsesApi), and for every other provider consults the static responsesApi config field (true for openai, a /^gpt-5/u RegExp for copilot routing GPT-5 over the Responses API). providerUsesStreaming(provider) returns true unconditionally for copilot and bob — which would otherwise fail (Copilot non-GPT-5 chat-completions models reject or return empty responses without streaming; Bob long generations time out as a single non-streaming completion) — and delegates to resolveOpenAiCompatibleStreaming (the OPENWIKI_OPENAI_COMPATIBLE_STREAMING opt-in) for openai-compatible; branches spread streaming:true rather than assigning it so an absent flag is omitted rather than disabled.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1280-L1294",
-          "version": "repo-lines-v1:sha256:630925957c96234d6e95699fda46227b4dbb0fd110d6799239238a5b3bfdf9bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyN2ViNDE1MzFiZWExZDBkMjE0MjliZmY0N2ZmZmI5MzQ0YTdkYjI1ZTRlYjNlMWY5MTM3ZjE2OTMzMzg1NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MjhkOTFiNzA1MTBhY2U3ZjgzZmNiYmIyZTM4ZWE5MDM3MGJhYzlhYTI0MzU3MWNiYTA5OTNiMWYyNjJiOWYifQ"
+          "resource": "repo://src/agent/index.ts#L1279-L1322",
+          "version": "repo-lines-v1:sha256:b66cb95bb0b6655473f1e50f81394776403d703011c8860c82d93cb729227615:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNGVmNmYyMjhjNTVkNzgxN2MxM2ZhZDg5YzAzZGQxYzA5NTI3YTlmMjBiZGY2ZTFlOTRjOTc3ZWYzNjRiNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MjhkOTFiNzA1MTBhY2U3ZjgzZmNiYmIyZTM4ZWE5MDM3MGJhYzlhYTI0MzU3MWNiYTA5OTNiMWYyNjJiOWYifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L506-L523",
-          "version": "repo-lines-v1:sha256:b9c730b8d38e76044fc6e2d21124fa629efc4cdbe0129b22bdf39aedd23787b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZWRjNWI0ZWIwNjk5MmRmZDgzMjY0NzE3ODU2MThmNzhiNmVjMmRjMWEyODcwODIxNzU3YmZiOGE3MzI2NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
+          "resource": "repo://src/config/constants.ts#L1124-L1185",
+          "version": "repo-lines-v1:sha256:fffa25b6f22983a1f937f41bab6d11ec16d2adacb55c7f10b4370d897bbb24fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYmNmODAwZmY3OWJkNDRmMGJkZjA1M2FhOTBhNDI3YWIxMzRlYmU5Mzk2ZmU1YmEyYjEwMjc2YWMwYTVjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNWNlZjVkYTQzOThhMWJmOTFlNGQ3ZDRkZWQwZjdiMDQ4MjZlNGNlNWU4YjA0Zjc1OTMwMmIyN2E3OWE3MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ODA4OGNkMTU3ZDUwMGRiOTk1NDQ4NTY2OTE3YzM1ZjI3NDY3YzRlY2I0OWIwN2RkY2ViZjE3ZjViMGU2MGIifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L504-L544",
+          "version": "repo-lines-v1:sha256:55e145ef466c828505dfe41d0aebd42f825e4bfce00d0545ce24e02d1a49c14e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNDU1MjljNzVhODgzMjM3MDY0OWZkYzM2YzI5ZTQxOWYzNjg2ZDA0NDBhMThhYzAxYTc5YzY3MmM4MGU2ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
         }
       ]
     },
@@ -714,7 +718,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T08:10:16.495Z"
   }
 }

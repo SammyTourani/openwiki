@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:448efceece8143e93b6cf28e83434358089e218fe700c722d6cc740a80790998",
+  "pageVersion": "sha256:0da0f7fbb2e176c0311aeadeee8a673a6427485ef5b6fb7eca065ffe7f458f43",
   "claims": [
     {
       "id": "claim_6a07849de8a7454ab87fae516e7e2d8e",
@@ -646,7 +646,7 @@
     },
     {
       "id": "claim_be8197e468f74ce2ba79c9277346b60c",
-      "statement": "With more than one worker, runPendingPageAgents holds back the quickstart page (/openwiki/quickstart.md) until every other page has finished, then runs a single-worker pass for it so its task-routing map links to pages that already exist. With one worker the queue order already places quickstart last, so no explicit holdback is needed.",
+      "statement": "With more than one worker, runPendingPageAgents puts the quickstart page's job ids into a heldBack set before the first runWorkerLoops call so concurrent workers document every other page first, then sets pool.size to 1 and runs a second runWorkerLoops pass with an empty held-back set so the quickstart page is generated last by a single worker whose task-routing map links to pages that already exist. With one worker the queue order already places quickstart last, so the held-back set is empty and the second pass is skipped. If the first pass ends with a fatal error, the quickstart pass is skipped and pool.fatal.error is rethrown before finish, so a fatal run never finalizes with the held-back page pending.",
       "evidence": [
         {
           "resource": "repo://src/agent/repository-runner.ts#L506-L507",
@@ -660,7 +660,7 @@
     },
     {
       "id": "claim_14dac5d2d57f4251a15f8d4859ce8bbe",
-      "statement": "When a worker is skipped due to a provider rate-limit error (isRateLimitError), the pool shrinks its live size by one (never below 1) and emits a user-facing message; the remaining workers continue. A fatal error from runPageAgent (any error that is not a skipped PageAgentOutcome) stops new work: runWorkerLoop records it in pool.fatal, removes the in-flight page, and returns; runPendingPageAgents rethrows pool.fatal.error before calling finishRepositoryRun, so the run never finalizes with pending jobs.",
+      "statement": "When a worker is skipped due to a provider rate-limit error (isRateLimitError) and the pool is concurrent (pool.size > 1), the pool decrements its live size by one and emits a user-facing text event reading 'Reduced page concurrency to <size> after a provider rate limit while documenting <path>.' The decrement is guarded by pool.size > 1, so a single-worker pool never shrinks below 1. An ordinary (non-rate-limit) worker failure is skipped but does not reduce the pool. A fatal error from runPageAgent (any error that is not a skipped PageAgentOutcome) stops new work: runWorkerLoop records it in pool.fatal, removes the in-flight page, and returns; runPendingPageAgents rethrows pool.fatal.error before calling finishRepositoryRun, so the run never finalizes with pending jobs.",
       "evidence": [
         {
           "resource": "repo://src/agent/repository-runner.ts#L683-L709",
@@ -717,10 +717,72 @@
           "version": "repo-lines-v1:sha256:4276b83078dafbbc576c7d11e365cc09d79f53f2b2f2a1f81089bd975305229c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYzU4NjIzOGJkZmZjYjU3ODY2NzdmNTJjY2U1YTMyNDMzNTAyMDU5YjE5YjJlMDMxMTVkNjJmNzU2MjZkM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ODJkNDJjMDlmZTFmNjk3Yzk1YzhmMmU4YWQ2NzY1NTM0N2RlMmI5N2EwNGNlNjVjZGJkNWQwYmRhYWEzN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjODFlNjQ0Yjk1YzU5N2NmMjcyYmQzNWU4MjQxODQ1ZTU1YzFiZTU0MDFjYWIxOTRiMDFlZTQ3NmY5MzM3ZTYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_99629bfb958840ea984c38ff8b9a774e",
+      "statement": "pageConcurrency is resolved before the runner starts, not read from durable run state. resolvePageConcurrency reads OPENWIKI_PAGE_CONCURRENCY from the environment, defaults to 1 (DEFAULT_PAGE_CONCURRENCY) when unset, accepts a positive integer, and rejects anything above MAX_PAGE_CONCURRENCY (8) with an invalid-value error. The resolved value flows from the CLI entry point src/agent/index.ts through runNativeRepositoryGeneration into runPendingPageAgents, where it is clamped with Math.max(1, Math.floor(...)). Because the PageWorkerPool is process-local and rebuilt on resume, concurrency is an operational knob, never a durable run property.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L355-L379",
+          "version": "repo-lines-v1:sha256:7fbc23015350d614b7315080072e734c120e7bdb7449d8d982f5d56350b9078f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2VjMTQ5MGM5YmI4ODNlNTkyOGFiNGZkMGRlM2Q3ODcyNTM0ZTlmY2Q2MjgwMGViZWFjNWQ2Y2JkYjY4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmUzOTY5ZDZiODgyZGE2NDA5ZDllN2E2NDNiNDQxOTNlMmEzNjAzOTI3Y2JjZDI1ZmNmYWNjYzc5OTgxYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MDFmZjA0OTEwNWMxMThjOGNkMzhhYzA3YmIzNjYwMzU5NGJjOTdkMGRlNjJiNjY0OGRjYWRiYmI1NGI4N2UifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L369-L376",
+          "version": "repo-lines-v1:sha256:f619ae1516a3709c07b435cb7228cc2c4792617b3ea68038c03014387236dcd7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWVmODFlNDA2NjJjMDU5ZTFkOGU1MTQxZWQxZDg5ZWM5NmY3ZDIwMmMzZjg3ZTAyNTYzYzc5MWRkOTAzZGZlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRiM2U3Y2QwYzNhNjIzMDQ3NjY4MTYxZDEwNGU5OWQ4NjIwOWNhM2U3NzU0YTI1YjExOWE0OTA3ODc4MDQyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWFlODk2MGZkNmEwNGExNmY1NmQ3NjRlY2E3ZjE2NzFmMzFmZDc0Mjc1MmUxYzNhYWU4NzlkYTIyMmVlZDVmYSJ9"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L588-L598",
+          "version": "repo-lines-v1:sha256:3098f07af2d90fed3024581f3cd0ebdeb5c37bec9cb54041f501d26d6f71375a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MDE5MmIxNTJjY2MzZDIwNTFjZmE5ODVhMzhhMDYyYzVmYTFmNjg2YTYzZDY3YWM4ZDEwMzBmNzc2MDA5YjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiMTU5YWNjNzc4YjEwNWM2MzRmOTFmNWVkN2UzYzc2YzUwOWEyMzQ4ZjhmOTE5MDA2N2Y5Y2JjZDMwZmI0MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2YWJkYzljZDBhMGMyNzFlYzI0ZDViMzI2NTNkZWFlZDdkOTVjNGRhZmQyZTk2Y2E5YmE1ZjQ2YTEwMDVhYjEifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1035-L1063",
+          "version": "repo-lines-v1:sha256:d3fba8cc0110a9b788aab99a5188dbf86585e11568da37bde6efa1a5b5e2d732:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYTVhNWVlY2IzYWM5YjRmOThiMDc4M2I2M2Y3ZjIxNGNjMGM0YjI1YWE4MTUwNjZkZDlkZTUzYTBjMTliNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmOTM3NTVlZThkMzQ0YTlmMzk5NGU3YTZhNzhiOGMzOWY1ZmY1NTdiYjI4Zjc1MGQ1ODM3MTNkOTAwOTVlZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NmYwM2U2MmRlMGM0NzlmZmQ1MjM5MDI1MmE2MmI2ZWNiYjdiMzZhNzBjNjE5NzcwYzc1MWNjYjgwMDgzMmYifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L84-L90",
+          "version": "repo-lines-v1:sha256:3bc0df00789535aad0b89002af92b838940ab4d0817f19241393b53f8794616f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRjZDM4ZDQ0OWUxYjhmMDRjMWVhYmFhNDMzNTBlZDEyYjE0ZmI2Mzk2NzZmZDBlYTBiOWZlMjg2ODI1OTNlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlhOTUxZDc0NjY2ODhhZWYwYmFkMTJjZmE2NzZmZGEzZTM0NjgzODdhMmU1YmRiZWM1MDdlNjYwODA4MzYxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc0ZTBjOTZhNzkyYTA3NzU1N2YyNzBlMjkxOTc5NTUyMTY3MGU3M2VkNWMxZDUzYTg3ZWY0ZjBjZWU1ZTFiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQ0OGEwYTc0NGJmNjAxZmZkMjQyZTNmNmViMzFjMjQ4MjFhZjQxNjE4MTFmMDVmYWJhNmE1MmU0OWExODIwNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ae2c4914040c41a0a2281143feeab155",
+      "statement": "pageConcurrency also changes the model's default retry budget: resolveProviderRetryAttempts returns PARALLEL_PROVIDER_RETRY_ATTEMPTS (5) for a run whose pageConcurrency > 1, and DEFAULT_PROVIDER_RETRY_ATTEMPTS (3) for a single worker, unless an explicit OPENWIKI_PROVIDER_RETRY_ATTEMPTS override is set which always wins. The resolved retry count is passed to createModel as the model's maxRetries, so the worker pool and the model retry layer cooperate: the model retries within a worker, while the pool reacts to a rate-limit error that escapes those retries by shrinking the pool.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/index.ts#L1113-L1120",
+          "version": "repo-lines-v1:sha256:6c5bb4d7905c243a04fbd3e20157bd5a737fac7d5b53591cc1b534e155641f20:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTA0ZDJmMzZjMmQ1ZjgyYjA3YWUyMzA1OTJmMmM3MmYyYzE0MjE2M2YzMjE5MTNiOGE5NDk3MTUxOTk2NmI5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM1MWJhNDZiMTI4NmQxMzVlYjZlZjU5NGViYWEzZDEzNTNhNTM2ZTMyZGNjZGEzOTYyOGI4YzY5ZDA5YmIyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmFjYjZkYWY3MGIzYWJlMDc0MjQ4ZTM5YjYwMzIyMDU0ZDg2OTUwNzJjMzM2YTRiMzJmNDQ2YTQ3MDY5YTAyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDZhOTY4NmM2YmI5YmIxYzE4ZDkwNmU0OTI2MTM0MGNiNjQwNTQ5MGEyZDc3NmU0YjVkYWI2ZjI4OTI0OGQ1NSJ9"
+        },
+        {
+          "resource": "repo://src/agent/index.ts#L355-L379",
+          "version": "repo-lines-v1:sha256:7fbc23015350d614b7315080072e734c120e7bdb7449d8d982f5d56350b9078f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2VjMTQ5MGM5YmI4ODNlNTkyOGFiNGZkMGRlM2Q3ODcyNTM0ZTlmY2Q2MjgwMGViZWFjNWQ2Y2JkYjY4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmUzOTY5ZDZiODgyZGE2NDA5ZDllN2E2NDNiNDQxOTNlMmEzNjAzOTI3Y2JjZDI1ZmNmYWNjYzc5OTgxYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0MDFmZjA0OTEwNWMxMThjOGNkMzhhYzA3YmIzNjYwMzU5NGJjOTdkMGRlNjJiNjY0OGRjYWRiYmI1NGI4N2UifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L1065-L1105",
+          "version": "repo-lines-v1:sha256:97f4083591676a767cd2adae231bb9bfa234b2052adc9d725d6fcaa771e53af9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMjcwOGQ0NWY0ZWFlYjU0YzRjMTBkNzM2YTcxMmQyMDUyYzY3ZWJjZjFkYmZkOWY2MmY1YmI2YzZkMGNjMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZDY3NTFhODI1OTBkNzk5ZDU4MGYyMGY0MDJjMjdmMTQ2OThhMjk1OWY0NmJlNWM0YWU4NmRmOGFlZjg4NGEifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L76-L83",
+          "version": "repo-lines-v1:sha256:8752f1e09fe4f797c611febdd9365a8df343e5a1f876ef1fff6df0f4fe4bc0f6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgzYTI4ODhiMjM4MzA3NjM2MmEyNjExY2IyNDM1ZTQ0OGIzM2FkZTljOWFlNGYyNzlhNGRmNDlhOWE1NGE0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGViOWRjMjQ1NDFjYWVkYWE1ZWNiZjc5YWU0YzI0YWI1YThiNjY0MGY1MjcxOGZmNjI5MjNkYzQ2YTI4ZjUzNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRhMjI5ZGY4NTkwNDcwN2U3MGMwZDY2N2ExNDM1ODBiNjg3ZjNiOThlNzg5YTM2N2I4ZmRjYTEzMzVhYTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmE3YjY0YjE2ZDkzNTIwMDFiMTlkY2YwY2QzYWUyMDY1ZDY1ZGQ1NDYzOTUwZGU4OWRlMzZiYWEzMjBmYjc4NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_46ed5ce83e984db08a780cb1f1ecfd0b",
+      "statement": "The heldBack set is threaded through the worker loops as a separate parameter rather than stored on PageWorkerPool: it only contains job ids in a concurrent run, is rebuilt from the plan on each runPendingPageAgents pass, and acquireNextJob unions it with the pool's claimed ids to build the exclude set passed to nextRepositoryPage.",
+      "evidence": [
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L599-L624",
+          "version": "repo-lines-v1:sha256:9f41c7d6278b0d1caf3aee5f24c076f45f23e63ea519f248ed61855cc7ddf794:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNGJiOGY3YWE1ZjQ4YWMwYTc2M2FlOWFlOWJkMGVkMDFiZjExOTJhOWM4OTYyMDM4YmU4NWVmZTJmZDJjZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMzI2ZDRjNzdlODI5NWNiZmU0ZDVlOGMzOTU5Y2YyYjRhNmE2ZTNmYjNmYzlkMzY0ZDAyNDZlNTY0Njg0ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4Mjg3MjZlZWY3ZjQwOTc1NjAyZmIyNzIzYTYzODk4MTA2NWZkMGM0YzdiYWRiOWExYWM5N2ZiMTI3MmZhZTYifQ"
+        },
+        {
+          "resource": "repo://src/agent/repository-runner.ts#L719-L736",
+          "version": "repo-lines-v1:sha256:424def5e590b1e9b4f1947ecbeae9b4adcf983c2cac4fd1cf85c73ddd430a993:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZmE1NDRmYmVkNDU3NjFhMzcxZTg0Y2I5MmU4ZWVjOGU2NjBiYmYyOGJjNDM4MmI3NzYyOWEwMDNjNmI3ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMGMzYTk2NDUzZjQzYTM2MmJmYjY2NGI0YzlkN2FkNGVjYzU5YWRlMWU4MzFjYzQzMGM4YmYxY2FiOGEyYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0Y2I0MmY3MjBhNDkyMmI3ODE4MTM1NjkzMzdhYmY1NWQ1NzdkNmIyYWRmNmE0ZjA0MjJjOWIyODBhNGJkYzYifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T08:10:16.495Z"
   }
 }

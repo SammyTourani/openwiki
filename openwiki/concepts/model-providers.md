@@ -28,10 +28,10 @@ sources:
     resource: repo://test/agent/bob.test.ts
   - id: openwiki-source-21fe6d4741a8225393c37599
     resource: repo://test/agent/create-model.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 ---
 
 # Model Providers and Credentials
@@ -55,7 +55,8 @@ hardcoding provider knowledge elsewhere. Two transport-selecting accessors
 take a model ID in addition to the provider: `providerUsesResponsesApi`
 (`true` for `openai`, the `gpt-5` pattern for `copilot`, and a configurable
 flag for `openai-compatible`) and `providerUsesStreaming` (forced on for
-`copilot` and configurable for `openai-compatible`).
+`copilot` and `bob`, configurable for `openai-compatible`, and `false`
+otherwise).
 
 The active provider is resolved by `resolveConfiguredProvider`: it prefers the
 explicit `OPENWIKI_PROVIDER` value (normalized case-insensitively by
@@ -117,7 +118,17 @@ returns that ID verbatim and the model-selection step is skipped entirely (see
 `providerHasFixedModel` / `getProviderFixedModel`). `createModel` builds a
 `ChatOpenAI` chat-completions client with a placeholder `apiKey`
 (`"bob-placeholder"`), which only satisfies the constructor's missing-key check;
-the real credential is injected per request by a custom fetch wrapper.
+the real credential is injected per request by a custom fetch wrapper. The
+client's `configuration.baseURL` falls back to
+`https://api.us-east.bob.ibm.com/inference/v1` when no override is resolved
+(`baseURL ?? "https://api.us-east.bob.ibm.com/inference/v1"`). Because long
+generations, such as planning a large repository, can outlast Bob's response
+timeout when sent as a single non-streaming completion, `providerUsesStreaming`
+forces `streaming: true` for `bob` so output (including tool calls) is returned
+as it is produced; `createModel` applies it via a conditional spread
+(`...(providerUsesStreaming(provider) ? { streaming: true } : {})`), not a
+`streaming: false` assignment, since LangChain turns an explicit `false` into
+`disableStreaming`.
 
 The adapter is `createBobFetch` (`src/agent/bob.ts`), which wraps `fetch` at the
 final request boundary to satisfy Bob's two non-standard requirements:
@@ -291,12 +302,18 @@ may still be set directly.
 The Copilot API serves non-GPT-5 models (Claude, Gemini) over the chat
 completions transport and rejects or returns empty responses for non-streaming
 requests, which would cause repository workers to exit without calling
-`submit_plan`/`submit_page`. `providerUsesStreaming` therefore forces the
-streaming HTTP transport (`streaming: true`) for every Copilot model — the same
-rationale that forces streaming on the openai-chatgpt Codex backend. For GPT-5
-models that use the Responses API (`responsesApi: /^gpt-5/u`), `streaming: true`
-is redundant but harmless, matching the openai-chatgpt provider pattern.
-`createModel` applies this with a conditional spread (`...(providerUsesStreaming(provider) ? { streaming: true } : {})`) rather than assigning `streaming: false`, because LangChain turns an explicit `false` into `disableStreaming`, which is not equivalent to omitting the key.
+`submit_plan`/`submit_page`. `providerUsesStreaming` therefore returns `true`
+for `copilot`, forcing the streaming HTTP transport (`streaming: true`) for every
+Copilot model — the same rationale that forces streaming on the openai-chatgpt
+Codex backend. For GPT-5 models that use the Responses API (`responsesApi:
+/^gpt-5/u`), `streaming: true` is redundant but harmless, matching the
+openai-chatgpt provider pattern. `providerUsesStreaming` also returns `true` for
+`bob` (see the IBM Bob section), is gated by the
+`OPENWIKI_OPENAI_COMPATIBLE_STREAMING` flag for `openai-compatible`, and returns
+`false` for every other provider. `createModel` applies this with a conditional
+spread (`...(providerUsesStreaming(provider) ? { streaming: true } : {})`) rather
+than assigning `streaming: false`, because LangChain turns an explicit `false`
+into `disableStreaming`, which is not equivalent to omitting the key.
 
 ## Run configuration resolution
 

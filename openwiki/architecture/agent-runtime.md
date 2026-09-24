@@ -1,7 +1,7 @@
 ---
 type: architecture
 title: Agent Runtime, Models, and Middleware
-description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, running the OKF, translation, and crash-guard middleware, and parsing the agent graph stream into display events.
+description: How OpenWiki builds and runs its DeepAgents documentation agent — resolving a model provider and model id, instantiating the right LangChain chat model, mounting a sandboxed docs-only filesystem backend, running the OKF, translation, and crash-guard middleware, parsing the agent graph stream into display events, and driving the parallel page-worker pool for repository generation.
 tags:
   - agent-runtime
   - model-providers
@@ -10,9 +10,10 @@ tags:
   - deepagents
   - filesystem-sandbox
   - langchain
+  - page-worker-pool
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 sources:
   - id: openwiki-source-0ad86abe7202c4e4d6897f34
     resource: repo://src/agent/agent-backend.ts
@@ -50,7 +51,7 @@ sources:
     resource: repo://test/agent/create-model.test.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
 ---
 
 # Agent Runtime, Models, and Middleware
@@ -71,10 +72,19 @@ The shared graph factory `createOpenWikiAgentGraph` refuses to build for reposit
 flowchart TD
   Start["runOpenWikiAgent(command, cwd, options)"] --> Load["loadOpenWikiEnv and syncBundledSkills"]
   Load --> Repo{"repository init or update"}
-  Repo -->|yes| Native["resolveRunConfig then createModel then runNativeRepositoryGeneration"]
+  Repo -->|yes| Native["resolveRunConfig then createModel"]
   Repo -->|no| Core["runOpenWikiAgentCore"]
+  Native --> Pool["runNativeRepositoryGeneration in repository-runner.ts"]
+  Pool --> Planner["planning worker: submit_plan"]
+  Planner --> Workers["PageWorkerPool up to resolvePageConcurrency"]
+  Workers --> Stagger["staggered worker starts, serialized acquireNextJob"]
+  Stagger --> Write["each worker documents one page, quickstart held back last"]
+  Write --> Rate{"rate-limit skip?"}
+  Rate -->|yes| Shrink["pool.size -= 1, never below 1"]
+  Rate -->|no| Finish["finishRepositoryRun"]
+  Shrink --> Write
   Core --> Cfg["resolveRunConfig: provider, credentials, modelId, limits, concurrency"]
-  Cfg --> Model["createModel builds LangChain chat model"]
+  Cfg --> Model["createModel per-provider dispatch: streaming forced for copilot and bob"]
   Model --> Graph["createOpenWikiAgentGraph: backend, middleware, prompt, checkpointer"]
   Graph --> Stream["agent.stream with messages or updates mode"]
   Stream --> Register["registerActiveRun for the stream window"]
@@ -105,13 +115,26 @@ Each branch constructs a purpose-built client:
 - **ChatGPT OAuth** reuses `ChatOpenAI` against the Codex Responses backend with `useResponsesApi`, `zdrEnabled` (forcing `store: false`), forced streaming, and the account/originator/beta headers the Codex backend requires.
 - **OpenRouter** builds `ChatOpenRouter` against the OpenRouter base URL, optionally pinning an upstream provider allowlist; a legacy OpenRouter-specific output cap still takes precedence there over the provider-neutral cap.
 - **Bedrock** builds `ChatBedrockConverse` with the resolved AWS region, the resolved output-token cap (now always threaded as `maxTokensOptions` because Bedrock falls back to a default of 16,000 tokens rather than letting the Converse API cap at 4,096), and, when `OPENWIKI_STREAM_IDLE_TIMEOUT` is set, a stream idle-timeout watchdog that aborts a generation stalled waiting for its first or next chunk (0 disables it).
-- **Copilot** shares the `ChatOpenAI` fallthrough below, but `providerUsesStreaming` forces the streaming HTTP transport for every Copilot model: non-GPT-5 models (Claude, Gemini) are served over chat completions and reject or return empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern.
-- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the branch passes a placeholder API key to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires.
-- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for gateways that only serve SSE.
+- **Copilot** shares the `ChatOpenAI` fallthrough below. Copilot's GPT-5 models route over the Responses API (`responsesApi: /^gpt-5/u`) while its Claude/Gemini models stay on chat completions, and `providerUsesStreaming` unconditionally forces the streaming HTTP transport for every Copilot model — see [Responses-API and streaming transport selection](#responses-api-and-streaming-transport-selection) for why.
+- **IBM Bob** is a ChatOpenAI-over-chat-completions client against the Bob inference endpoint. Bob declares a single fixed model (`premium`) that `resolveModelId` returns unconditionally via `getProviderFixedModel`, so no model id is ever configured for it. Because Bob authenticates with an `Apikey` scheme and requires a registered User-Agent, the branch passes a placeholder API key (`"bob-placeholder"`) to satisfy `ChatOpenAI`'s constructor and injects the real key per request through a `createBobFetch` fetch adapter that rewrites the `Authorization` header to `Apikey <key>` (read from the environment at call time) and sets `User-Agent: ibm-bob-openwiki-provider`, which Bob's Cloudflare WAF requires. `providerUsesStreaming` also forces `streaming: true` for Bob so long generations do not outlast the endpoint's response timeout.
+- **OpenAI and all OpenAI-compatible gateways** fall through to a shared `ChatOpenAI` branch that honors a per-provider base URL, chooses the Responses API when the provider config asks for it, and forces the streaming HTTP transport for the providers that need it.
 
 The provider-neutral output limit is the single `OPENWIKI_MAX_OUTPUT_TOKENS` setting: because a run constructs only one model, one value is mapped to each SDK's field name (`maxTokens` for OpenAI/Anthropic/MaaS/Bedrock, `maxOutputTokens` for Gemini), with OpenRouter's older `OPENWIKI_OPENROUTER_MAX_TOKENS` cap retained for backward compatibility and taking precedence on OpenRouter runs. When unset the limit is omitted so the provider default applies — except for Bedrock, where `resolveConfiguredMaxOutputTokens` falls back to `resolveBedrockMaxTokens` (default `BEDROCK_DEFAULT_MAX_TOKENS` = 16,000, overridable via `OPENWIKI_BEDROCK_MAX_TOKENS`) so the Converse API no longer truncates at its built-in 4,096-token ceiling; Anthropic's modern-Claude default is a separate, Anthropic-only behavior.
 
 `createModel` also threads a resolved reasoning config: `OPENWIKI_REASONING_EFFORT` is applied only to models that declare a reasoning capability, and it is dispatched by the model's declared transport — a Responses-API `reasoning.effort` payload for `responses-reasoning`, a chat-completions `reasoning_effort` kwarg for `chat-completions-reasoning-effort`, and `ChatGoogle`'s `thinkingLevel` for `gemini-thinking-level`; an unsupported provider/model or an invalid effort value throws.
+
+### Responses-API and streaming transport selection
+
+Two shared helpers in the constants module govern which `ChatOpenAI` options each branch applies, so the dispatch logic stays out of `createModel`:
+
+`providerUsesResponsesApi(provider, modelId)` decides whether a `ChatOpenAI` branch sets `useResponsesApi`. For `openai-compatible` it is an explicit opt-in read by `resolveOpenAiCompatibleUseResponsesApi` from `OPENWIKI_OPENAI_COMPATIBLE_USE_RESPONSES_API`, because that provider points at arbitrary third-party endpoints where the Responses API is not assumed. For every other provider it consults the static `responsesApi` field on the provider config, which is either `true` (the direct `openai` provider) or a `RegExp` matched against the model id (Copilot, where `/^gpt-5/u` routes GPT-5 models over the Responses API while Claude/Gemini models stay on chat completions). A provider with no `responsesApi` field never opts in.
+
+`providerUsesStreaming(provider)` decides whether a branch spreads `streaming: true` into the constructor — spread rather than assigned, because `streaming: false` is not the same as omitting the key (LangChain turns the explicit `false` into `disableStreaming`). It returns `true` unconditionally for two providers that would otherwise fail, and `false` for everyone else:
+
+- **Copilot** — the Copilot API serves non-GPT-5 models (Claude, Gemini) over the chat-completions transport and rejects or returns empty responses for non-streaming requests, so without `streaming: true` a repository worker can exit without calling `submit_plan`/`submit_page`. The flag is redundant but harmless for GPT-5 models that use the Responses API, matching the `openai-chatgpt` pattern (which sets `streaming: true` directly because the Codex backend rejects non-streaming requests).
+- **Bob** — long generations can outlast the Bob endpoint's response timeout as a single non-streaming completion, so streaming returns output as it is produced.
+
+For `openai-compatible` it delegates to `resolveOpenAiCompatibleStreaming`, an explicit opt-in from `OPENWIKI_OPENAI_COMPATIBLE_STREAMING`; it stays opt-in because SSE is not guaranteed to survive the proxies and load balancers in front of arbitrary endpoints. The flag is never *forced* for the openai-compatible gateways — when the opt-in is absent the key is simply omitted, so the provider's default transport applies rather than being disabled.
 
 ### Reasoning capability table and transports
 

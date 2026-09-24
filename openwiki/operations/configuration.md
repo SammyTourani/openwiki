@@ -31,10 +31,10 @@ sources:
     resource: repo://test/config/constants.test.ts
   - id: openwiki-source-3782823f29993efcdedd20ac
     resource: repo://test/config/env-behavior.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 ---
 
 # Configuration and Environment
@@ -256,6 +256,13 @@ gets `DEFAULT_PROVIDER_RETRY_ATTEMPTS` (3), while a concurrent run (more than
 one page worker) gets `PARALLEL_PROVIDER_RETRY_ATTEMPTS` (5), because
 concurrent workers make transient rate limits the common failure and need more
 headroom.
+
+The coupling is wired at the agent entrypoint, not left to chance:
+`resolvePageConcurrency()` runs first and its result is passed as
+`{ pageConcurrency }` into `resolveProviderRetryAttempts(process.env, {
+pageConcurrency })`. A concurrent run therefore picks up the higher retry
+headroom automatically unless `OPENWIKI_PROVIDER_RETRY_ATTEMPTS` overrides it —
+there is no separate "concurrent retries" knob to set.
 
 ### Reasoning effort
 

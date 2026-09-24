@@ -36,10 +36,10 @@ sources:
     resource: repo://src/integrations/install/registry.ts
   - id: openwiki-source-349c953869b025f9d4935470
     resource: repo://src/platform/language.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 ---
 
 # OpenWiki Quickstart
@@ -55,7 +55,7 @@ matches your task. Read this first, then follow the links below.
 
 ## What OpenWiki is
 
-OpenWiki is published as the `openwiki` npm package (v0.5.2), a Node.js
+OpenWiki is published as the `openwiki` npm package (v0.6.0), a Node.js
 (>=22.22.0) CLI whose binary resolves to `dist/cli/cli.js`. Its purpose, per the
 package manifest, is "a CLI that uses a DeepAgents documentation agent to
 generate and maintain an OpenWiki for a codebase." The runtime is a DeepAgents
@@ -167,6 +167,8 @@ the canonical wiki pages; each one links into the deeper source map.
 | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Set up OpenWiki for the first time (provider/model, credentials, repo setup)                                            | [First-Run Onboarding](/openwiki/workflows/onboarding.md)             |
 | Trace the resumable page-job generation flow (`begin → submit_plan → next_page → submit_page → finish`, with on-demand `inspect_page_claims`)                  | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md) |
+| Understand the parallel page-worker pool — `OPENWIKI_PAGE_CONCURRENCY` (1–8), the staggered start, rate-limit-driven live-concurrency reduction, and per-worker retry (`PARALLEL_PROVIDER_RETRY_ATTEMPTS`) | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md) · [Agent Runtime, Models, and Middleware](/openwiki/architecture/agent-runtime.md) |
+| Understand how the agent resolves a provider, instantiates the LangChain chat model, streams completions (incl. the Bob streaming branch), and runs the page-worker pool driver | [Agent Runtime, Models, and Middleware](/openwiki/architecture/agent-runtime.md) |
 | Understand how a failing or early-exiting page worker is skipped and restored without losing completed pages            | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md) |
 | Understand how repository source drift during a run is detected and why the run finalizes without advancing the source checkpoint | [Repository Generation Lifecycle](/openwiki/workflows/repository-generation.md) |
 | Understand how Claims are reconciled on update and how a page submits sparse Claim decisions (`confirmedClaimIds` / `claims` / `retractedClaimIds`) with issue-free Claims retained automatically and full Claims available via on-demand inspect | [Claims Reconciliation](/openwiki/workflows/claims-reconciliation.md) |
@@ -177,6 +179,7 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                                   | Read                                                         |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Look up CLI commands and flags (init/update, mode, print, integrations, visualize, schedule) | [CLI Reference](/openwiki/operations/cli-reference.md)        |
+| Group related repositories into a wiki workspace, link wikis, and search across them with `openwiki link` / `openwiki workspace` | [CLI Reference](/openwiki/operations/cli-reference.md) |
 | Understand environment loading, the `~/.openwiki` state directory, provider/token/reasoning settings, and secret sanitization | [Configuration and Environment](/openwiki/operations/configuration.md) |
 | Set up scheduled self-update in CI and the docs-PR workflow                                  | [CI Scheduling and Self-Update](/openwiki/operations/ci-scheduling.md) |
 
@@ -185,7 +188,9 @@ the canonical wiki pages; each one links into the deeper source map.
 | I want to…                                                                  | Read                                             |
 | --------------------------------------------------------------------------- | ------------------------------------------------ |
 | Run OpenWiki inside IBM Bob, Codex, Claude Code, OpenCode, Cursor, Kiro, Oh My Pi, or Antigravity CLI | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
+| Retrieve wiki context from a host agent via the `openwiki_search` and `openwiki_read` MCP tools (and `openwiki_list_workspaces` / `openwiki_list_wikis`) | [Coding-Agent Integrations](/openwiki/integrations/coding-agents.md) |
 | Understand the built-in source connectors, the ConnectorRuntime contract, and how to add a new one | [Source Connectors](/openwiki/integrations/connectors.md) |
+| Look up the fourteen model providers, their environment keys, auth methods, base URLs, and credential persistence — including the Bob streaming transport and the `providerUsesStreaming` rules | [Model Providers and Credentials](/openwiki/concepts/model-providers.md) |
 | Explore the interactive graph visualizer (live server and static export)    | [Interactive Visualizer](/openwiki/integrations/visualizer.md) |
 
 ### Test your changes

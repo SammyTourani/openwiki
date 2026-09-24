@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b5dd4d8b5e2a7063a6ad155d7ccd49e1ce3670e7ec005cd604528823ffdf46ed",
+  "pageVersion": "sha256:2b35265ba40a085e0eb72e4142df8158b61646fdbf7a281346b9632fd1e7256f",
   "claims": [
     {
       "id": "claim_b3bcf02b8ac0428c909611ba967f994a",
@@ -624,15 +624,19 @@
     },
     {
       "id": "claim_4596bf1f226c49c1bf14dfb055ed8325",
-      "statement": "src/agent/bob.ts provides createBobFetch, a fetch wrapper for the IBM Bob inference endpoint that rewrites the placeholder Authorization header to `Apikey <key>` (read from BOB_API_KEY_ENV_KEY at call time so hot-reloaded .env values apply) and sets the `ibm-bob-openwiki-provider` User-Agent required by Bob's Cloudflare WAF; createModel's `bob` provider branch wires it into the ChatOpenAI configuration.",
+      "statement": "src/agent/bob.ts provides createBobFetch, a fetch wrapper for the IBM Bob inference endpoint that rewrites the placeholder Authorization header to `Apikey <key>` (read from BOB_API_KEY_ENV_KEY at call time so hot-reloaded .env values apply) and sets the `ibm-bob-openwiki-provider` User-Agent required by Bob's Cloudflare WAF; createModel's `bob` provider branch wires it into a ChatOpenAI configuration with forced `streaming: true` (via providerUsesStreaming), and the `bedrock` branch instead constructs a ChatBedrockConverse.",
       "evidence": [
         {
           "resource": "repo://src/agent/bob.ts#L1-L28",
           "version": "repo-lines-v1:sha256:3fcaa881cc6f01cbed50678578b50cd9cad048c24ebd2402add1ccea4c05b2eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWQ0YjhkZWQ1NzU1ZmE1NmIyZTQ0ZThjN2QxZTY3MWVlZDA3NzlkZWJmNTY4MWVlMjdlOGQ5NjQzN2U4ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/agent/index.ts#L1265-L1278",
-          "version": "repo-lines-v1:sha256:b772a0c3e2a157ef66e7a01b297ac73cc7df5433524b794b0bf50ff18684b5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGJjYWYwN2I2MzgyZTFjYWM0ZjY3M2RjMmZjYTFmOWEyNGNmNDNjNzk2M2JlMGFmNTQ0NjA1YTAwYjVhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2E0NDY3ZmE2ZGJjNzRiODVmYTIxYWE2YWFkZjFlNTBiMWRhOGQ3MDg0ZTYwMmQxYTY4NWIxZWJjM2JmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDgyNDZhMWRhODZlZWIyYWVkZTdhM2NiMTdiODUxYWEzOGZlMzQyODdmNWQ4M2MyYzdjZmMxMTRiZTM5ZDUifQ"
+          "resource": "repo://src/agent/index.ts#L1269-L1306",
+          "version": "repo-lines-v1:sha256:43cb3d067782c013618d82f8cca7f737710c998e864910eeccd212c80dffd813:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NDg4OTYxNDEyNGZmMGJhZDNjMWUzYTMwMmM0ZWYwMDg1YTBkMzFhZDRiYmRhNzhlMDQwZTRmNDlhOGM5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDgyNDZhMWRhODZlZWIyYWVkZTdhM2NiMTdiODUxYWEzOGZlMzQyODdmNWQ4M2MyYzdjZmMxMTRiZTM5ZDUifQ"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L536-L541",
+          "version": "repo-lines-v1:sha256:1c6fef9dd2ac4128abfe173284651592f3019e5e4f1dadb0a3f81732a3980e41:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcyZDhiNGY0ODYzYTA4MmFiNmU0YjIwZjg5Mjc0ODM5ZWYxZjM4MGM3NzRmNzAzOWY3ZWNlYzA0YTRkZGZiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA2NjA1ODljZjU0YmJlNjE1ZjcwOWI2OWUyOTkzMWQ0MWNmYmI3ZDg4MzkwYTdmN2Y4NDc5NDdkYjA5MzAwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDhiY2RjYTM4NzgzZmM1NTI1OWNhZTIzMTA2YmYxNWUzY2ViZjMzZTY5NjUyY2JmZTA1MTVhN2IwZTdhNTRmMiJ9"
         }
       ]
     },
@@ -718,7 +722,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T08:10:16.495Z"
   }
 }

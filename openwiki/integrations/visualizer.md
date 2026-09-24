@@ -3,9 +3,6 @@ type: integration
 title: Interactive Visualizer
 description: How the `openwiki visualize` command builds a link graph from wiki Markdown and OKF frontmatter, serves a live single-page reader over loopback HTTP, and exports a self-contained static site for hosting.
 tags: [visualizer, graph, static-export, cli, server, markdown-reader]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
 sources:
   - id: openwiki-source-5b54a58d1b51cd490b0e7162
     resource: repo://package.json
@@ -39,7 +36,10 @@ sources:
     resource: repo://test/visualize/visualize-client-lib.test.ts
   - id: openwiki-source-42403648c3f500ce06398039
     resource: repo://tsconfig.client.json
-generated: { by: "openwiki/0.5.2", at: "2026-09-22T08:09:45.637Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 ---
 
 # Interactive Visualizer
@@ -86,24 +86,26 @@ which the client uses to scale each node's radius.
 Edges come from Markdown links. `linkNodes` scans each body for relative `.md`
 link targets, resolves them against the linking page's directory into node ids,
 and records a directed edge plus the reciprocal `backlinks` entry. Before
-resolving a target, each link is passed through `decodeURIComponent` so that
+resolving a target, each link is passed through `decodeURIComponent` once so that
 URL-encoded filenames — for example a link written as `Foo%20Bar.md` — decode to
-the on-disk `Foo Bar.md` and match the corresponding node id. The decode is
-wrapped in a `try`/`catch`: if a link contains a literal percent sequence that is
-not valid URL-encoding (for instance `100%.md`), the raw, undecoded link is kept
-instead of throwing, and the target must still match an existing node id or the
-link is dropped. Self-links, links to pages not in the graph, and duplicate edges
-are dropped, so the graph only ever contains resolvable page-to-page
-references. The walk stays inside the wiki: paths that resolve outside
-`wikiRoot` are skipped, symlinks (which are neither files nor directories to the
-dirent check) are never followed, and the scaffolding files `INSTRUCTIONS.md`
-and `log.md` are excluded.
+the on-disk `Foo Bar.md` and match the corresponding node id. This matters because
+filenames containing spaces or special characters are percent-encoded in markdown
+links, so without decoding they would never match the real node id and the edge
+would be dropped. The decode is wrapped in a `try`/`catch`: if a link contains a
+literal percent sequence that is not valid URL-encoding (for instance `100%.md`),
+the raw, undecoded link is kept instead of throwing, and the target must still
+match an existing node id or the link is dropped. Self-links, links to pages not
+in the graph, and duplicate edges are dropped, so the graph only ever contains
+resolvable page-to-page references. The walk stays inside the wiki: paths that
+resolve outside `wikiRoot` are skipped, symlinks (which are neither files nor
+directories to the dirent check) are never followed, and the scaffolding files
+`INSTRUCTIONS.md` and `log.md` are excluded.
 
 ```mermaid
 flowchart TD
   A["buildGraph(wikiRoot)"] --> B["collectMarkdown: recurse, skip excluded and out-of-root"]
   B --> C["readNode: splitFrontmatter, resolve title and type, measure size"]
-  C --> D["linkNodes: resolve relative .md links to node ids"]
+  C --> D["linkNodes: decode each link, resolve relative .md links to node ids"]
   D --> E["drop self-links, unknown targets, duplicates"]
   E --> F["record edges plus reciprocal backlinks"]
   F --> G["WikiGraph: root, generatedAt, types, nodes, edges"]

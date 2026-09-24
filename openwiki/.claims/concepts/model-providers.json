@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:72000f7ee7a9ada72b3eeeefecbec0d3ea84e41126a0eb8e66c8e8f8efd1e83a",
+  "pageVersion": "sha256:75c0325f3db641695101f2f92feb1986b2c109037b6c224b2c628d0169fb7414",
   "claims": [
     {
       "id": "claim_881dbd60dd434311a4774d72dabe29af",
@@ -316,15 +316,19 @@
     },
     {
       "id": "claim_4fbe3d38d4d04c0d9acddf291b73e537",
-      "statement": "providerUsesStreaming forces the streaming HTTP transport for all Copilot models (returning true for copilot), because the Copilot API rejects or empties non-streaming requests for non-GPT-5 models (Claude, Gemini) served over chat completions, mirroring the openai-chatgpt forced-streaming rationale; createModel applies it as a conditional spread rather than assigning streaming:false, since LangChain turns an explicit false into disableStreaming.",
+      "statement": "providerUsesStreaming returns true for copilot (non-streaming requests are rejected or empty for non-GPT-5 models served over chat completions, mirroring the openai-chatgpt forced-streaming rationale) and for bob (long generations can outlast Bob's response timeout; streaming returns output as it is produced, including tool calls); it is gated by OPENWIKI_OPENAI_COMPATIBLE_STREAMING for openai-compatible (via resolveOpenAiCompatibleStreaming) and returns false otherwise. createModel applies it as a conditional spread rather than assigning streaming:false, since LangChain turns an explicit false into disableStreaming.",
       "evidence": [
         {
-          "resource": "repo://src/agent/index.ts#L1307-L1321",
-          "version": "repo-lines-v1:sha256:630925957c96234d6e95699fda46227b4dbb0fd110d6799239238a5b3bfdf9bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyN2ViNDE1MzFiZWExZDBkMjE0MjliZmY0N2ZmZmI5MzQ0YTdkYjI1ZTRlYjNlMWY5MTM3ZjE2OTMzMzg1NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMTJiNjExODk0M2UzMGMwMDY4MzNlNzgxNjMwYTUzYjMyZjQxN2VmNWY5Nzk1YzNmMTJmMzMwODAyNGM1ZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MjhkOTFiNzA1MTBhY2U3ZjgzZmNiYmIyZTM4ZWE5MDM3MGJhYzlhYTI0MzU3MWNiYTA5OTNiMWYyNjJiOWYifQ"
+          "resource": "repo://src/agent/index.ts#L1303-L1321",
+          "version": "repo-lines-v1:sha256:8484854b373adfe077d3b49e452bfe599558561235133231a3da1abcf44c4ea8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ZjNiMjFmZDc5YTU2YWI3N2QxZWQxNjRmMDliZmU4MGVjNzdkNzFkNTI2MWQ0YmUyY2MxZWI5NmU2MmI1ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNzk2MDcyZTYxMjcwNDhmZWFjYzc1ZjcyMTIxNWY4YjliNTM5N2MzMzY2NmE3OWJiZWVhZGI4MzM0MGE2ZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxYWI4NGYxYjMzMmM1NTI0YTM2YmFkMDczZDY2ZDEwNzc2NjVhOTc3NTNlOGYzYWYzM2Y5YjI0ODI2MzhkNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIifQ"
         },
         {
-          "resource": "repo://src/config/constants.ts#L520-L537",
-          "version": "repo-lines-v1:sha256:b9c730b8d38e76044fc6e2d21124fa629efc4cdbe0129b22bdf39aedd23787b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZWRjNWI0ZWIwNjk5MmRmZDgzMjY0NzE3ODU2MThmNzhiNmVjMmRjMWEyODcwODIxNzU3YmZiOGE3MzI2NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
+          "resource": "repo://src/config/constants.ts#L1178-L1185",
+          "version": "repo-lines-v1:sha256:55bac5be8b03cd7c5f8e7fe0ff46160c09e75166fbfaf3afc9d1dfe6be2ff1b0:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTEzZGRlNmMyYzdlZmJiMmEyNTkzOTE2NzNlMmJlZjIyMWM1OTk3OGM5ZmJhNDg5ZWYwZjUzYjQ5OWM3YjBhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTI1OTY3ZDk1YjJhN2ViMmE4ZmUzYTk1ZjY1OTkzNzIwOTk3NGJmMzUxMGRhMjRmMDIzYzI5NGEwOGUyYTBlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ4MDg4Y2QxNTdkNTAwZGI5OTU0NDg1NjY5MTdjMzVmMjc0NjdjNGVjYjQ5YjA3ZGRjZWJmMTdmNWIwZTYwYiJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L520-L544",
+          "version": "repo-lines-v1:sha256:431c998f34b2dda8a0b1fcd760b05422e36b6033b0f39fb8949af7cb1ab86614:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZWRjNWI0ZWIwNjk5MmRmZDgzMjY0NzE3ODU2MThmNzhiNmVjMmRjMWEyODcwODIxNzU3YmZiOGE3MzI2NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NmJlMDI2OGQzZGEzMWQ3NjQ1ZmY4ZWU5NjJjNGIzZDhkYzBkMDMwZTA5NDM1MGExZDIwNDk5YmUzZGY3N2EifQ"
         }
       ]
     },
@@ -384,15 +388,23 @@
     },
     {
       "id": "claim_300ce8cc09f940f38a6f139e0c2efb0a",
-      "statement": "The bob (IBM Bob) provider is an api-key provider targeting https://api.us-east.bob.ibm.com/inference/v1 (overridable via BOB_BASE_URL) and is the only provider with fixedModel \"premium\", so resolveModelId returns it verbatim and skips model selection; createModel builds a ChatOpenAI client with a placeholder apiKey and injects the real key per request through createBobFetch.",
+      "statement": "The bob (IBM Bob) provider is an api-key provider targeting https://api.us-east.bob.ibm.com/inference/v1 (overridable via BOB_BASE_URL) and is the only provider with fixedModel \"premium\", so resolveModelId returns it verbatim and skips model selection; createModel builds a ChatOpenAI client with a placeholder apiKey (\"bob-placeholder\"), a configuration.baseURL that falls back to https://api.us-east.bob.ibm.com/inference/v1 when no override is resolved, a custom createBobFetch wrapper that injects the real key per request, and forced streaming (providerUsesStreaming returns true for bob because long generations can outlast Bob's response timeout).",
       "evidence": [
         {
+          "resource": "repo://src/agent/bob.ts#L1-L27",
+          "version": "repo-lines-v1:sha256:2b091cb90f461d5f4f931834c21aa66d68e5a8062b453c6328d882d5225b70ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWQ0YjhkZWQ1NzU1ZmE1NmIyZTQ0ZThjN2QxZTY3MWVlZDA3NzlkZWJmNTY4MWVlMjdlOGQ5NjQzN2U4ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
           "resource": "repo://src/agent/index.ts#L1292-L1305",
-          "version": "repo-lines-v1:sha256:b772a0c3e2a157ef66e7a01b297ac73cc7df5433524b794b0bf50ff18684b5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGJjYWYwN2I2MzgyZTFjYWM0ZjY3M2RjMmZjYTFmOWEyNGNmNDNjNzk2M2JlMGFmNTQ0NjA1YTAwYjVhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2E0NDY3ZmE2ZGJjNzRiODVmYTIxYWE2YWFkZjFlNTBiMWRhOGQ3MDg0ZTYwMmQxYTY4NWIxZWJjM2JmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDgyNDZhMWRhODZlZWIyYWVkZTdhM2NiMTdiODUxYWEzOGZlMzQyODdmNWQ4M2MyYzdjZmMxMTRiZTM5ZDUifQ"
+          "version": "repo-lines-v1:sha256:f55b21f3c5957a5aff49df6fafbd3bdbe0d7cb6c22a1bcb2023c050b4a9fd9f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxNGJjYWYwN2I2MzgyZTFjYWM0ZjY3M2RjMmZjYTFmOWEyNGNmNDNjNzk2M2JlMGFmNTQ0NjA1YTAwYjVhOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3Y2E0NDY3ZmE2ZGJjNzRiODVmYTIxYWE2YWFkZjFlNTBiMWRhOGQ3MDg0ZTYwMmQxYTY4NWIxZWJjM2JmZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0YzlkNGZlM2Q0NDgzNTcxMmU4OGI1ZGFlODYxNTFhZjgzMDlkYTUyZjU4Nzg1NjI5MzYyNTFjMjdlMzYxYWMifQ"
         },
         {
           "resource": "repo://src/config/constants.ts#L290-L297",
           "version": "repo-lines-v1:sha256:443b72749f82e90eec0419c6fc5ed3d2109d026f439c73854feee6af8ff502b1:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVkZTVjMjVlODIyZGI5YjcyYmY0OWMwYTUyYzAzYTZmYWQ2ZDU4ZWEzMmRmNjdjN2U4MmQwZmIyNmQ1MmU0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ2ZjI3MTBlODdjNzI2ZjBmMGFmZTFmZmU4OTA5NjM4NDZmMzljNTNmMDk1YTU1NjZkYWU3MjFjNWY2N2FhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ExYzViZmFjZmZkMDE5NzU1MDUwM2IxZmI5YzBjMzAyNDk4NGYyNWRhZjFhYjg3ZTIwNzNhZTRhYzViOTc2YiJ9"
+        },
+        {
+          "resource": "repo://src/config/constants.ts#L536-L541",
+          "version": "repo-lines-v1:sha256:1c6fef9dd2ac4128abfe173284651592f3019e5e4f1dadb0a3f81732a3980e41:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDcyZDhiNGY0ODYzYTA4MmFiNmU0YjIwZjg5Mjc0ODM5ZWYxZjM4MGM3NzRmNzAzOWY3ZWNlYzA0YTRkZGZiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA2NjA1ODljZjU0YmJlNjE1ZjcwOWI2OWUyOTkzMWQ0MWNmYmI3ZDg4MzkwYTdmN2Y4NDc5NDdkYjA5MzAwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDhiY2RjYTM4NzgzZmM1NTI1OWNhZTIzMTA2YmYxNWUzY2ViZjMzZTY5NjUyY2JmZTA1MTVhN2IwZTdhNTRmMiJ9"
         }
       ]
     },
@@ -476,7 +488,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-23T08:09:37.122Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T08:10:16.495Z"
   }
 }

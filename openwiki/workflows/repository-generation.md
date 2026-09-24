@@ -14,6 +14,8 @@ tags:
     parallel-workers,
   ]
 sources:
+  - id: openwiki-source-a953060a04ccefcf777de48e
+    resource: repo://src/agent/index.ts
   - id: openwiki-source-8b316b2a9d744597bffd9c56
     resource: repo://src/agent/repository-prompts.ts
   - id: openwiki-source-6cb3236b8c1412a26d832fcf
@@ -24,6 +26,8 @@ sources:
     resource: repo://src/agent/utils.ts
   - id: openwiki-source-9697823032111d36e2d4caa9
     resource: repo://src/agent/wiki-replacement.ts
+  - id: openwiki-source-278e7e180eac811fc1a24f7a
+    resource: repo://src/config/constants.ts
   - id: openwiki-source-ed90c6fa13119927ecd82845
     resource: repo://src/generation/errors.ts
   - id: openwiki-source-1197594de038075f3570340c
@@ -40,10 +44,10 @@ sources:
     resource: repo://test/agent/repository-runner.test.ts
   - id: openwiki-source-77febf5d49f26cc2405db8dd
     resource: repo://test/generation/repository-run.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 ---
 
 # Repository Generation Lifecycle
@@ -488,15 +492,20 @@ scratch. The pool tracks:
 - `fatal` — first fatal error; once set, loops stop taking new jobs.
 - `skipped` — snapshots of pages whose worker exited without submitting.
 
+A separate `heldBack` set (the quickstart job ids) is threaded through the worker
+loops alongside the pool rather than stored on it; it only contains ids in a
+concurrent run, and it is rebuilt from the plan on each pass.
+
 ### Job acquisition
 
 `acquireNextJob` chains each call onto the pool's `acquiring` promise so only
 one loop at a time calls `nextRepositoryPage`. It passes an `exclude` set built
-from the pool's `claimed` ids and the `heldBack` ids, so each call yields a
-distinct pending job. When `nextRepositoryPage` returns `status: "complete"`
-(no unowned pending job remains), the loop exits. A concurrent pool also
-temporarily holds back the quickstart page so its task-routing map links to
-pages that already exist.
+from the pool's `claimed` ids unioned with the `heldBack` ids, so each call
+yields a distinct pending job; a pending job's id is added to `claimed` as soon
+as it is returned. When `nextRepositoryPage` returns `status: "complete"`
+(no unowned, non-held-back pending job remains), the loop exits. A concurrent
+pool also temporarily holds back the quickstart page so its task-routing map links
+to pages that already exist.
 
 ### Worker start stagger
 
@@ -505,12 +514,47 @@ The first wave of worker starts is spread by `workerStartStaggerMs` (default
 Each slot waits `slot * workerStartStaggerMs` before its first job; the delay is
 ignored for a single worker (`slot === 0`).
 
+### Concurrency configuration
+
+`pageConcurrency` is resolved before the runner starts, not read from run state.
+`resolvePageConcurrency` reads `OPENWIKI_PAGE_CONCURRENCY` from the environment:
+it defaults to 1 when unset, accepts a positive integer, and rejects anything
+above `MAX_PAGE_CONCURRENCY` (8). The resolved value flows from the CLI entry
+point (`src/agent/index.ts`) through `runNativeRepositoryGeneration` into
+`runPendingPageAgents`, where it is clamped with `Math.max(1, Math.floor(...))`.
+Because the pool is process-local and rebuilt on resume, concurrency is an
+operational knob, never a durable run property.
+
+### Provider retry interaction
+
+`pageConcurrency` also changes the model's default retry budget. When more than
+one worker shares a single provider key, transient rate limits become the common
+failure, so `resolveProviderRetryAttempts` returns `PARALLEL_PROVIDER_RETRY_ATTEMPTS`
+(5) for a run whose `pageConcurrency > 1` and returns `DEFAULT_PROVIDER_RETRY_ATTEMPTS`
+(3) for a single worker — unless an explicit `OPENWIKI_PROVIDER_RETRY_ATTEMPTS`
+override is set, which always wins. The resolved retry count is passed to
+`createModel` as the model's `maxRetries` (see [Configuration](../operations/configuration.md)).
+So the worker pool and the model retry layer cooperate: the model retries within
+a worker, while the pool reacts to a rate-limit error that escapes those retries
+by shrinking the pool.
+
 ### Rate-limit backoff
 
-When a worker is skipped due to a provider rate-limit error (`isRateLimitError`),
-the pool shrinks its live `size` by one (never below 1) and emits a user-facing
-message. The remaining workers continue; the fatal-error guard ensures the run
-never finalizes with pending jobs.
+When a worker is skipped due to a provider rate-limit error (`isRateLimitError`)
+and the pool is concurrent (`pool.size > 1`), the pool decrements its live `size`
+by one and emits a user-facing `text` event:
+
+```
+Reduced page concurrency to ${pool.size} after a provider rate limit while documenting ${next.job.path}.
+```
+
+The decrement is guarded by `pool.size > 1`, so a single-worker pool never shrinks
+below 1. An ordinary (non-rate-limit) worker failure is skipped but does _not_
+reduce the pool — the test "does not lower concurrency for an ordinary worker
+failure" verifies that no "Reduced page concurrency" event is emitted. The shrunk
+slot simply stops taking new jobs (its `while` condition `slot < pool.size`
+becomes false), while the remaining workers continue. The fatal-error guard
+ensures the run never finalizes with pending jobs.
 
 ### Fatal-error handling
 
@@ -523,10 +567,16 @@ will skip are allowed to complete before the rethrow.
 
 ### Quickstart holdback
 
-With more than one worker, `runPendingPageAgents` holds back the quickstart page
-(`/openwiki/quickstart.md`) until every other page has finished, then runs a
-single-worker pass for it. With one worker the queue order already places
-quickstart last, so no explicit holdback is needed.
+With more than one worker, `runPendingPageAgents` puts the quickstart page's job
+ids into the `heldBack` set before the first `runWorkerLoops` call, so the
+concurrent workers document every other page first. Only once that pass finishes
+without a fatal error does it set `pool.size = 1` and run a second
+`runWorkerLoops` pass with an empty held-back set, so the quickstart page is
+generated last by a single worker whose task-routing map then links to pages that
+already exist. With one worker the queue order already places quickstart last, so
+the held-back set is empty and the second pass is skipped. If the first pass ends
+with a fatal error the quickstart pass is skipped and the fatal error is rethrown
+before finish, so a fatal run never finalizes with the held-back page pending.
 
 ### Snapshot capture and restore
 
@@ -560,7 +610,7 @@ sequenceDiagram
     Runner ->> Worker: runWorkerLoops starts pool.size loops
     loop until queue drained or fatal
         Worker ->> Pool: acquireNextJob serialized
-        Pool ->> Core: nextRepositoryPage exclude claimed
+        Pool ->> Core: nextRepositoryPage exclude claimed and heldBack
         Core -->> Pool: pending job or complete
         Worker ->> Worker: captureRepositoryPageSnapshot
         Worker ->> Worker: runPageAgent
@@ -570,17 +620,23 @@ sequenceDiagram
         else non-fatal error or clean exit without submit
             Worker ->> Core: skipRepositoryPage with snapshot
             Pool ->> Pool: pool.skipped.push snapshot
+            alt rate-limit and pool.size > 1
+                Pool ->> Pool: pool.size -= 1
+                Pool -->> Runner: emit Reduced page concurrency
+            end
         else fatal error
             Pool ->> Pool: pool.fatal set
         end
     end
     Runner ->> Runner: rethrow pool.fatal if set
+    Runner ->> Runner: single-worker pass for held-back quickstart
     Runner ->> Runner: finishRepositoryRun with skipped snapshots
 ```
 
-One pass of `runPendingPageAgents` with a concurrent worker pool. Job
-acquisition is serialized; model work runs in parallel; skip and submit mutate
-shared state under the `withRunMutation` lock.
+One pass of `runPendingPageAgents` with a concurrent worker pool. Job acquisition
+is serialized and excludes claimed and held-back ids; model work runs in parallel;
+a rate-limit skip shrinks `pool.size` while a fatal error stops new work; skip and
+submit mutate shared state under the `withRunMutation` lock.
 
 ## Progress events
 

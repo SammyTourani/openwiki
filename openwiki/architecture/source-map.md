@@ -102,10 +102,10 @@ sources:
     resource: repo://src/visualize/server.ts
   - id: openwiki-source-d485c898eb60ebb173072eab
     resource: repo://test/agent/stream-redaction.test.ts
-generated: { by: "openwiki/0.5.2", at: "2026-09-23T08:09:37.122Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T08:10:16.495Z" }
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-23T08:09:37.122Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T08:10:16.495Z
 ---
 
 # Source Map
@@ -224,7 +224,10 @@ persistence shared by the generation lifecycle), `src/agent/docs-only-backend.ts
 surfaces (`openai-chatgpt-oauth.ts`, `vertex-surface.ts`), and the IBM Bob fetch
 adapter (`bob.ts`, whose `createBobFetch` rewrites `Authorization: Bearer …` to
 `Apikey <key>` and sets the `ibm-bob-openwiki-provider` `User-Agent` required by
-Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch).
+Bob's Cloudflare WAF — wired into `createModel`'s `bob` branch, which constructs a
+`ChatOpenAI` over the Bob base URL with `createBobFetch` and forced `streaming: true`
+via `providerUsesStreaming`, while the `bedrock` branch constructs a
+`ChatBedrockConverse`).
 `runNativeRepositoryGeneration` drives the full loop: it begins the run, runs the
 planning agent, then calls `runPendingPageAgents` to document every pending
 page with fresh shell-free workers, emitting `repository_progress` events at each
